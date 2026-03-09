@@ -1,0 +1,327 @@
+---
+title: Deployment Guide
+description: Deploy Daily Tracker API with Docker and Render
+icon: rocket
+---
+
+The Daily Tracker API is designed to be deployed using Docker. This guide covers deployment to Render, but the Docker configuration can be used with any container platform.
+
+## Prerequisites
+
+<Steps>
+  <Step title="PostgreSQL Database">
+    A PostgreSQL database must be provisioned before deployment. Recommended options:
+    - [Neon](https://neon.tech) (serverless PostgreSQL)
+    - [Render PostgreSQL](https://render.com)
+    - [Supabase](https://supabase.com)
+    - Any managed PostgreSQL service
+  </Step>
+  
+  <Step title="Environment Variables">
+    Prepare all required environment variables. See the [Environment Variables](/guides/environment-variables) guide for details.
+  </Step>
+  
+  <Step title="Google OAuth Credentials">
+    Set up OAuth 2.0 credentials in [Google Cloud Console](https://console.cloud.google.com):
+    1. Create a project
+    2. Enable Google+ API
+    3. Create OAuth 2.0 Client ID
+    4. Add authorized redirect URI: `https://your-domain.com/auth/google/callback`
+  </Step>
+</Steps>
+
+## Docker Configuration
+
+The project includes a multi-stage Dockerfile optimized for production deployment.
+
+### Dockerfile
+
+```dockerfile
+# Build stage
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
+COPY pom.xml .
+COPY .mvn ./.mvn
+COPY mvnw .
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -q
+COPY src ./src
+RUN ./mvnw clean package -DskipTests -q
+
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 3000
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+### Build and Run Locally
+
+<CodeGroup>
+```bash Build Image
+# Build the Docker image
+docker build -t dailytracker-api .
+```
+
+```bash Run Container
+# Run the container with environment variables
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:pass@host:5432/db" \
+  -e JWT_SECRET="your_jwt_secret_min_32_chars" \
+  -e FRONTEND_URL="http://localhost:5173" \
+  -e GOOGLE_CLIENT_ID="your_client_id" \
+  -e GOOGLE_CLIENT_SECRET="your_client_secret" \
+  -e AES_SECRET="your_aes_secret" \
+  dailytracker-api
+```
+
+```bash Using Docker Compose
+# Create docker-compose.yml
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - AES_SECRET=${AES_SECRET}
+    restart: unless-stopped
+
+# Run with:
+docker-compose up -d
+```
+</CodeGroup>
+
+## Deploy to Render
+
+[Render](https://render.com) provides a simple platform for deploying Docker-based applications.
+
+<Steps>
+  <Step title="Create Web Service">
+    1. Go to [Render Dashboard](https://dashboard.render.com)
+    2. Click **New +** > **Web Service**
+    3. Connect your Git repository
+    4. Select the repository containing your Daily Tracker API
+  </Step>
+  
+  <Step title="Configure Service">
+    Set the following configuration:
+    
+    - **Name:** `dailytracker-api` (or your preferred name)
+    - **Region:** Choose closest to your users
+    - **Branch:** `main` (or your production branch)
+    - **Runtime:** Docker
+    - **Instance Type:** Starter or higher
+  </Step>
+  
+  <Step title="Set Environment Variables">
+    Add all required environment variables in the Render dashboard:
+    
+    <AccordionGroup>
+      <Accordion title="Required Variables">
+        ```bash
+        DATABASE_URL=your_postgres_connection_string
+        JWT_SECRET=your_secure_jwt_secret_32_chars
+        FRONTEND_URL=https://your-frontend-domain.com
+        GOOGLE_CLIENT_ID=your_google_client_id
+        GOOGLE_CLIENT_SECRET=your_google_client_secret
+        AES_SECRET=your_aes_encryption_key
+        ```
+      </Accordion>
+      
+      <Accordion title="Optional Variables">
+        ```bash
+        PORT=3000
+        ```
+      </Accordion>
+    </AccordionGroup>
+  </Step>
+  
+  <Step title="Configure Health Check">
+    Set the health check path to `/healthz`
+    
+    - **Health Check Path:** `/healthz`
+    - **Expected Response:** 200 OK with body `OK`
+  </Step>
+  
+  <Step title="Deploy">
+    Click **Create Web Service**. Render will:
+    1. Build your Docker image
+    2. Run database migrations (Flyway)
+    3. Start your application
+    4. Expose it at `https://your-service.onrender.com`
+  </Step>
+</Steps>
+
+## Health Check Endpoint
+
+The API includes a health check endpoint for monitoring:
+
+```http
+GET /healthz
+```
+
+**Response:**
+```text
+OK
+```
+
+This endpoint:
+- Returns 200 status code when the application is running
+- Does not require authentication
+- Can be used by load balancers and monitoring tools
+
+## Database Migrations
+
+The application automatically runs Flyway migrations on startup:
+
+1. Flyway connects to the database
+2. Creates the `flyway_schema_history` table if it doesn't exist
+3. Runs any pending migrations from `src/main/resources/db/migration/`
+4. Marks migrations as complete
+
+<Info>
+  Migrations run automatically on deployment. No manual intervention is needed.
+</Info>
+
+<Warning>
+  If a migration fails, the application will not start. Check logs for details.
+</Warning>
+
+## Production Configuration
+
+### Recommended Settings
+
+<CardGroup cols={2}>
+  <Card title="Instance Type" icon="server">
+    **Minimum:** 512 MB RAM, 0.5 CPU
+    
+    **Recommended:** 1 GB RAM, 1 CPU
+    
+    Scale based on traffic patterns.
+  </Card>
+  
+  <Card title="Database Connection Pool" icon="database">
+    Default configuration:
+    - Max pool size: 5
+    - Min idle: 1
+    
+    Adjust based on instance size and concurrent users.
+  </Card>
+  
+  <Card title="Auto-Deploy" icon="arrows-rotate">
+    Enable auto-deploy from your main branch for continuous deployment.
+  </Card>
+  
+  <Card title="Monitoring" icon="chart-line">
+    Use Render's built-in metrics or integrate with:
+    - New Relic
+    - Datadog
+    - Custom APM solution
+  </Card>
+</CardGroup>
+
+### Environment-Specific Configuration
+
+<Tabs>
+  <Tab title="Development">
+    ```bash
+    DATABASE_URL=postgresql://localhost:5432/daily_scrum
+    JWT_SECRET=dev_secret_min_32_characters
+    FRONTEND_URL=http://localhost:5173
+    GOOGLE_CLIENT_ID=dev_client_id
+    GOOGLE_CLIENT_SECRET=dev_client_secret
+    AES_SECRET=dev_aes_secret
+    PORT=3000
+    ```
+  </Tab>
+  
+  <Tab title="Staging">
+    ```bash
+    DATABASE_URL=postgresql://staging-db-host:5432/daily_scrum
+    JWT_SECRET=staging_secure_secret_32_chars
+    FRONTEND_URL=https://staging.dailytracker.com
+    GOOGLE_CLIENT_ID=staging_client_id
+    GOOGLE_CLIENT_SECRET=staging_client_secret
+    AES_SECRET=staging_aes_secret
+    PORT=3000
+    ```
+  </Tab>
+  
+  <Tab title="Production">
+    ```bash
+    DATABASE_URL=postgresql://prod-db-host:5432/daily_scrum
+    JWT_SECRET=prod_secure_random_secret_32_chars
+    FRONTEND_URL=https://dailytracker.com.br
+    GOOGLE_CLIENT_ID=prod_client_id
+    GOOGLE_CLIENT_SECRET=prod_client_secret
+    AES_SECRET=prod_secure_aes_key
+    PORT=3000
+    ```
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Build Fails">
+    **Problem:** Docker build fails during Maven compilation
+    
+    **Solutions:**
+    - Ensure Java 21 is specified in `pom.xml`
+    - Check for compilation errors in source code
+    - Verify all dependencies are available in Maven Central
+  </Accordion>
+  
+  <Accordion title="Application Won't Start">
+    **Problem:** Container starts but application crashes
+    
+    **Solutions:**
+    - Check environment variables are set correctly
+    - Verify database connection string format
+    - Ensure database is accessible from the container
+    - Check logs: `docker logs <container-id>`
+  </Accordion>
+  
+  <Accordion title="Migration Failures">
+    **Problem:** Flyway migrations fail on startup
+    
+    **Solutions:**
+    - Check database permissions (needs CREATE, ALTER, INSERT)
+    - Verify migration files are in `src/main/resources/db/migration/`
+    - Ensure migrations follow naming convention: `V{version}__{description}.sql`
+    - Check `flyway_schema_history` table for failed migrations
+  </Accordion>
+  
+  <Accordion title="Health Check Fails">
+    **Problem:** `/healthz` endpoint returns 404 or 500
+    
+    **Solutions:**
+    - Verify application has fully started
+    - Check logs for startup errors
+    - Ensure port 3000 is exposed and mapped correctly
+    - Test locally: `curl http://localhost:3000/healthz`
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="sliders" href="/guides/environment-variables">
+    Complete reference of all configuration options
+  </Card>
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Learn about the database schema and migrations
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/auth/register">
+    Explore available endpoints
+  </Card>
+  <Card title="Authentication" icon="shield" href="/authentication">
+    Understand JWT and OAuth2 flows
+  </Card>
+</CardGroup>

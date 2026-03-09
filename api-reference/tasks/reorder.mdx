@@ -1,0 +1,92 @@
+---
+title: "Reorder Tasks"
+api: "PUT /api/tasks/reorder"
+description: "Update the position/order of multiple tasks"
+---
+
+## Authentication
+
+This endpoint requires authentication. Include a Bearer token in the Authorization header.
+
+## Request Body
+
+Send an array of objects containing task IDs and their new positions.
+
+<ParamField body="items" type="array" required>
+  Array of objects with task ID and position information
+</ParamField>
+
+<ParamField body="items[].id" type="integer" required>
+  The task ID to reorder
+</ParamField>
+
+<ParamField body="items[].position" type="integer" required>
+  The new position for the task
+</ParamField>
+
+## Response
+
+Returns 204 No Content on success.
+
+## Example Request
+
+```bash
+curl -X PUT https://api.dailytracker.com/api/tasks/reorder \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "id": 1,
+      "position": 3
+    },
+    {
+      "id": 2,
+      "position": 1
+    },
+    {
+      "id": 3,
+      "position": 2
+    }
+  ]'
+```
+
+## Example Response
+
+```
+204 No Content
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Invalid request body format
+</ResponseField>
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid request format"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  One or more tasks not found or do not belong to the authenticated user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "One or more tasks not found"
+}
+```

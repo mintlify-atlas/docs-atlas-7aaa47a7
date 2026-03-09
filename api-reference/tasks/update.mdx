@@ -1,0 +1,159 @@
+---
+title: "Update Task"
+api: "PUT /api/tasks/:id"
+description: "Update an existing task for the authenticated user"
+---
+
+## Authentication
+
+This endpoint requires authentication. Include a Bearer token in the Authorization header.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the task to update
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include the fields you want to update.
+
+<ParamField body="title" type="string">
+  Task title (max 200 characters). Optional.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Task description (max 5000 characters). Optional.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Current status of the task. Optional. Common values: TODO, IN_PROGRESS, DONE
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Priority level of the task. Optional. Common values: LOW, MEDIUM, HIGH
+</ParamField>
+
+<ParamField body="projectId" type="integer">
+  ID of the project to associate this task with. Optional.
+</ParamField>
+
+<ParamField body="taskTypeId" type="integer">
+  ID of the task type. Optional.
+</ParamField>
+
+## Response
+
+Returns the updated task object.
+
+<ResponseField name="id" type="integer">
+  Unique identifier for the task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Task title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Task description
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the task
+</ResponseField>
+
+<ResponseField name="priority" type="string">
+  Priority level of the task
+</ResponseField>
+
+<ResponseField name="position" type="integer">
+  Position of the task for ordering purposes
+</ResponseField>
+
+<ResponseField name="projectId" type="integer">
+  ID of the associated project (if any)
+</ResponseField>
+
+<ResponseField name="taskTypeId" type="integer">
+  ID of the task type (if any)
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns this task
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp when the task was last updated
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PUT https://api.dailytracker.com/api/tasks/15 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "IN_PROGRESS",
+    "priority": "HIGH"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 15,
+  "title": "Implement user authentication",
+  "description": "Add JWT-based authentication to the API",
+  "status": "IN_PROGRESS",
+  "priority": "HIGH",
+  "position": 1,
+  "projectId": 5,
+  "taskTypeId": 2,
+  "userId": 123,
+  "createdAt": "2026-03-09T15:30:00Z",
+  "updatedAt": "2026-03-09T16:45:00Z"
+}
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Validation error - invalid data format
+</ResponseField>
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "details": [
+    "title: size must be between 0 and 200"
+  ]
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  Task not found or does not belong to the authenticated user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "Task not found"
+}
+```

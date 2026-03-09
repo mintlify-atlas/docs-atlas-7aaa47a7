@@ -1,0 +1,500 @@
+---
+title: Database Setup
+description: PostgreSQL configuration and Flyway migrations for Daily Tracker API
+icon: database
+---
+
+The Daily Tracker API uses PostgreSQL as its primary database with Flyway for schema migrations. This guide covers database setup, schema structure, and migration management.
+
+## Requirements
+
+<CardGroup cols={2}>
+  <Card title="PostgreSQL" icon="database">
+    **Version:** 12 or higher
+    
+    **Features Used:**
+    - TIMESTAMPTZ for timestamps
+    - Foreign key constraints
+    - Cascade deletes
+  </Card>
+  
+  <Card title="Flyway" icon="arrows-rotate">
+    **Version:** Managed by Spring Boot
+    
+    **Configuration:**
+    - Baseline on migrate: enabled
+    - Baseline version: 0
+  </Card>
+</CardGroup>
+
+## Database Connection
+
+### Connection String Format
+
+The application accepts PostgreSQL connection strings in two formats:
+
+<CodeGroup>
+```text JDBC Format (Standard)
+jdbc:postgresql://host:port/database?schema=public
+```
+
+```text Prisma Format (Also Supported)
+postgresql://username:password@host:port/database?schema=public
+```
+</CodeGroup>
+
+<Info>
+  The application automatically handles both formats. Spring Boot's DataSource configuration normalizes Prisma-style URLs to JDBC format.
+</Info>
+
+### Example Connections
+
+<Tabs>
+  <Tab title="Local">
+    ```bash
+    DATABASE_URL="postgresql://postgres:password@localhost:5432/daily_scrum?schema=public"
+    ```
+  </Tab>
+  
+  <Tab title="Neon">
+    ```bash
+    DATABASE_URL="postgresql://user:pass@ep-cool-name.us-east-2.aws.neon.tech/daily_scrum?sslmode=require"
+    ```
+  </Tab>
+  
+  <Tab title="Render">
+    ```bash
+    DATABASE_URL="postgresql://user:pass@dpg-xxxxx.oregon-postgres.render.com/daily_scrum"
+    ```
+  </Tab>
+</Tabs>
+
+## Database Schema
+
+The database uses PascalCase table names (e.g., `"User"`, `"Task"`) with quoted identifiers, inherited from the original Prisma schema.
+
+### Tables Overview
+
+<CardGroup cols={2}>
+  <Card title="User" icon="user">
+    Stores user accounts with email/password and Google OAuth support
+  </Card>
+  <Card title="Task" icon="list-check">
+    Individual tasks with status, priority, and relationships
+  </Card>
+  <Card title="Project" icon="folder">
+    Project containers for organizing tasks
+  </Card>
+  <Card title="TaskType" icon="tag">
+    Custom task types within projects
+  </Card>
+  <Card title="RefreshToken" icon="key">
+    JWT refresh tokens for authentication
+  </Card>
+</CardGroup>
+
+### Schema Details
+
+<Tabs>
+  <Tab title="User">
+    ```sql
+    Table: "User"
+    Schema: public
+    
+    Columns:
+    - id              SERIAL PRIMARY KEY
+    - email           VARCHAR(255) UNIQUE NOT NULL
+    - password        VARCHAR(255)                    -- Nullable for Google OAuth users
+    - googleId        VARCHAR(255) UNIQUE             -- Google OAuth identifier
+    - geminiKey       VARCHAR(512)                    -- Encrypted Gemini API key
+    - language        VARCHAR(10) NOT NULL DEFAULT 'pt-BR'
+    
+    Relationships:
+    - tasks           One-to-Many with Task
+    - projects        One-to-Many with Project
+    ```
+    
+    **Notes:**
+    - `password` is hashed using BCrypt
+    - `geminiKey` is AES encrypted
+    - `googleId` is populated for OAuth users
+  </Tab>
+  
+  <Tab title="Task">
+    ```sql
+    Table: "Task"
+    Schema: public
+    
+    Columns:
+    - id              SERIAL PRIMARY KEY
+    - title           VARCHAR(255) NOT NULL
+    - description     TEXT
+    - status          VARCHAR(50) NOT NULL            -- e.g., 'TODO', 'IN_PROGRESS', 'DONE'
+    - priority        VARCHAR(10) NOT NULL DEFAULT 'MEDIUM'  -- 'LOW', 'MEDIUM', 'HIGH'
+    - position        INTEGER                         -- For custom ordering
+    - createdAt       TIMESTAMPTZ NOT NULL
+    - updatedAt       TIMESTAMPTZ NOT NULL
+    - userId          INTEGER NOT NULL REFERENCES "User"(id)
+    - projectId       INTEGER REFERENCES "Project"(id)
+    - taskTypeId      INTEGER REFERENCES "TaskType"(id)
+    
+    Relationships:
+    - user            Many-to-One with User (required)
+    - project         Many-to-One with Project (optional)
+    - taskType        Many-to-One with TaskType (optional)
+    ```
+    
+    **Notes:**
+    - Timestamps are managed by JPA `@PrePersist` and `@PreUpdate`
+    - `position` enables drag-and-drop ordering
+  </Tab>
+  
+  <Tab title="Project">
+    ```sql
+    Table: "Project"
+    Schema: public
+    
+    Columns:
+    - id              SERIAL PRIMARY KEY
+    - name            VARCHAR(255) NOT NULL
+    - color           VARCHAR(50) NOT NULL DEFAULT '#8b949e'
+    - userId          INTEGER NOT NULL REFERENCES "User"(id)
+    
+    Relationships:
+    - user            Many-to-One with User
+    - tasks           One-to-Many with Task (cascade delete)
+    - taskTypes       One-to-Many with TaskType (cascade delete)
+    ```
+    
+    **Notes:**
+    - Default color is set by `@PrePersist` hook
+    - Deleting a project cascades to tasks and task types
+  </Tab>
+  
+  <Tab title="TaskType">
+    ```sql
+    Table: "TaskType"
+    Schema: public
+    
+    Columns:
+    - id              SERIAL PRIMARY KEY
+    - name            VARCHAR(255) NOT NULL
+    - projectId       INTEGER NOT NULL REFERENCES "Project"(id)
+    
+    Relationships:
+    - project         Many-to-One with Project
+    - tasks           One-to-Many with Task
+    ```
+    
+    **Notes:**
+    - Task types are project-specific
+    - Deleting a task type nullifies related tasks (via `@PreRemove`)
+  </Tab>
+  
+  <Tab title="RefreshToken">
+    ```sql
+    Table: "RefreshToken"
+    Schema: public
+    
+    Columns:
+    - id              SERIAL PRIMARY KEY
+    - token           TEXT NOT NULL UNIQUE
+    - userId          INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE
+    - expiryDate      TIMESTAMPTZ NOT NULL
+    
+    Relationships:
+    - user            Many-to-One with User
+    ```
+    
+    **Notes:**
+    - Tokens expire after 30 days (configurable)
+    - Cascade delete when user is deleted
+  </Tab>
+</Tabs>
+
+## Flyway Migrations
+
+The application uses Flyway to manage database schema changes. Migrations run automatically on application startup.
+
+### Configuration
+
+```yaml
+spring:
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+```
+
+### Migration Files
+
+All migrations are located in `src/main/resources/db/migration/`:
+
+<Steps>
+  <Step title="V1: Add Gemini Key to User">
+    **File:** `V1__add_gemini_key_to_user.sql`
+    
+    ```sql
+    ALTER TABLE public."User"
+        ADD COLUMN IF NOT EXISTS "geminiKey" VARCHAR(512);
+    ```
+    
+    Adds support for storing encrypted Gemini API keys per user.
+  </Step>
+  
+  <Step title="V2: Create Refresh Token Table">
+    **File:** `V2__create_refresh_token_table.sql`
+    
+    ```sql
+    CREATE TABLE "RefreshToken" (
+        id SERIAL PRIMARY KEY,
+        token TEXT NOT NULL UNIQUE,
+        "userId" INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        "expiryDate" TIMESTAMPTZ NOT NULL
+    );
+    ```
+    
+    Implements JWT refresh token storage for long-lived sessions.
+  </Step>
+  
+  <Step title="V3: Add Language to User">
+    **File:** `V3__add_language_to_user.sql`
+    
+    ```sql
+    ALTER TABLE public."User"
+        ADD COLUMN IF NOT EXISTS "language" VARCHAR(10) NOT NULL DEFAULT 'pt-BR';
+    ```
+    
+    Adds internationalization support with Portuguese as default.
+  </Step>
+  
+  <Step title="V4: Add Priority to Task">
+    **File:** `V4__add_priority_to_task.sql`
+    
+    ```sql
+    ALTER TABLE public."Task"
+        ADD COLUMN IF NOT EXISTS priority VARCHAR(10) NOT NULL DEFAULT 'MEDIUM';
+    ```
+    
+    Enables task prioritization (LOW, MEDIUM, HIGH).
+  </Step>
+  
+  <Step title="V5: Add Position to Task">
+    **File:** `V5__add_position_to_task.sql`
+    
+    ```sql
+    ALTER TABLE public."Task"
+        ADD COLUMN IF NOT EXISTS position INTEGER DEFAULT NULL;
+    ```
+    
+    Supports custom task ordering for drag-and-drop functionality.
+  </Step>
+</Steps>
+
+### Migration Naming Convention
+
+Flyway migrations must follow this pattern:
+
+```text
+V{version}__{description}.sql
+```
+
+**Examples:**
+- `V1__initial_schema.sql`
+- `V2__add_user_settings.sql`
+- `V3__create_notifications_table.sql`
+
+<Warning>
+  Never modify a migration that has already been applied. Always create a new migration to make changes.
+</Warning>
+
+## Hibernate Configuration
+
+The application uses Hibernate with specific settings:
+
+```yaml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Does NOT create or modify tables
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+```
+
+<Info>
+  **`ddl-auto: validate`** means Hibernate only checks that entities match the database schema. It will not create or alter tables. All schema changes must be done via Flyway migrations.
+</Info>
+
+### Physical Naming Strategy
+
+The `PhysicalNamingStrategyStandardImpl` preserves exact entity names, including PascalCase and quotes:
+
+```java
+@Entity
+@Table(name = "\"User\"", schema = "public")
+public class User { ... }
+```
+
+Maps to: `public."User"`
+
+## Database Setup Instructions
+
+<Tabs>
+  <Tab title="Local Development">
+    <Steps>
+      <Step title="Install PostgreSQL">
+        Download and install PostgreSQL 12+ from [postgresql.org](https://www.postgresql.org/download/)
+      </Step>
+      
+      <Step title="Create Database">
+        ```bash
+        # Connect to PostgreSQL
+        psql -U postgres
+        
+        # Create database
+        CREATE DATABASE daily_scrum;
+        
+        # Grant permissions
+        GRANT ALL PRIVILEGES ON DATABASE daily_scrum TO your_user;
+        ```
+      </Step>
+      
+      <Step title="Set Environment Variable">
+        ```bash
+        export DATABASE_URL="postgresql://postgres:password@localhost:5432/daily_scrum?schema=public"
+        ```
+      </Step>
+      
+      <Step title="Run Application">
+        Flyway will automatically create tables on first startup:
+        
+        ```bash
+        ./mvnw spring-boot:run
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Neon (Serverless)">
+    <Steps>
+      <Step title="Create Neon Project">
+        1. Sign up at [neon.tech](https://neon.tech)
+        2. Create a new project
+        3. Copy the connection string
+      </Step>
+      
+      <Step title="Configure Connection">
+        ```bash
+        DATABASE_URL="postgresql://user:pass@ep-name.region.aws.neon.tech/daily_scrum?sslmode=require"
+        ```
+      </Step>
+      
+      <Step title="Deploy Application">
+        Migrations run automatically on startup. No manual setup needed.
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Render PostgreSQL">
+    <Steps>
+      <Step title="Create PostgreSQL Database">
+        1. Go to [Render Dashboard](https://dashboard.render.com)
+        2. Click **New +** > **PostgreSQL**
+        3. Choose a plan and region
+        4. Click **Create Database**
+      </Step>
+      
+      <Step title="Get Connection String">
+        Copy the **Internal Database URL** from the database info page
+      </Step>
+      
+      <Step title="Configure Application">
+        Add the connection string to your web service environment variables:
+        
+        ```bash
+        DATABASE_URL=<internal-database-url>
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Migration Failed">
+    **Problem:** Flyway migration fails with SQL error
+    
+    **Solutions:**
+    - Check database user has CREATE, ALTER, INSERT privileges
+    - Verify migration SQL syntax is correct
+    - Check `flyway_schema_history` table for failed entries
+    - Manually fix database state and mark migration as resolved
+  </Accordion>
+  
+  <Accordion title="Table Not Found">
+    **Problem:** Application throws "relation does not exist" error
+    
+    **Solutions:**
+    - Ensure migrations have run successfully
+    - Check that table names use correct quoting: `\"User\"`
+    - Verify schema is set to `public`
+    - Check Flyway baseline version matches applied migrations
+  </Accordion>
+  
+  <Accordion title="Connection Refused">
+    **Problem:** Cannot connect to PostgreSQL database
+    
+    **Solutions:**
+    - Verify database is running: `pg_isready -h localhost -p 5432`
+    - Check connection string format
+    - Ensure firewall allows connections on port 5432
+    - For cloud databases, verify IP allowlist settings
+  </Accordion>
+  
+  <Accordion title="Schema Validation Failed">
+    **Problem:** Hibernate validation fails on startup
+    
+    **Solutions:**
+    - Ensure all migrations have been applied
+    - Check entity annotations match database schema
+    - Verify column types match between entity and database
+    - Set `ddl-auto: none` temporarily to skip validation
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Version Control" icon="code-branch">
+    Always commit migration files to version control before deploying.
+  </Card>
+  
+  <Card title="Test Migrations" icon="flask">
+    Test migrations on a staging database before applying to production.
+  </Card>
+  
+  <Card title="Backup Before Migration" icon="floppy-disk">
+    Always backup production database before running new migrations.
+  </Card>
+  
+  <Card title="Rollback Plan" icon="rotate-left">
+    Have a rollback strategy for failed migrations (e.g., restore from backup).
+  </Card>
+</CardGroup>
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Environment Variables" icon="sliders" href="/guides/environment-variables">
+    Configure database connection strings
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/guides/deployment">
+    Deploy with database configuration
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/auth/register">
+    Explore data model via API endpoints
+  </Card>
+</CardGroup>

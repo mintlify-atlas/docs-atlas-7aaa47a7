@@ -1,0 +1,110 @@
+---
+title: "List Tasks"
+api: "GET /api/tasks"
+description: "Retrieve all tasks for the authenticated user"
+---
+
+## Authentication
+
+This endpoint requires authentication. Include a Bearer token in the Authorization header.
+
+## Response
+
+Returns an array of task objects belonging to the authenticated user.
+
+<ResponseField name="id" type="integer">
+  Unique identifier for the task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Task title (max 200 characters)
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Task description (max 5000 characters)
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the task (e.g., TODO, IN_PROGRESS, DONE)
+</ResponseField>
+
+<ResponseField name="priority" type="string">
+  Priority level of the task (e.g., LOW, MEDIUM, HIGH)
+</ResponseField>
+
+<ResponseField name="position" type="integer">
+  Position of the task for ordering purposes
+</ResponseField>
+
+<ResponseField name="projectId" type="integer">
+  ID of the associated project (if any)
+</ResponseField>
+
+<ResponseField name="taskTypeId" type="integer">
+  ID of the task type (if any)
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns this task
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp when the task was last updated
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET https://api.dailytracker.com/api/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## Example Response
+
+```json
+[
+  {
+    "id": 1,
+    "title": "Complete API documentation",
+    "description": "Write comprehensive API docs for all endpoints",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH",
+    "position": 1,
+    "projectId": 5,
+    "taskTypeId": 2,
+    "userId": 123,
+    "createdAt": "2026-03-08T10:30:00Z",
+    "updatedAt": "2026-03-09T14:20:00Z"
+  },
+  {
+    "id": 2,
+    "title": "Review pull requests",
+    "description": "Review pending PRs from the team",
+    "status": "TODO",
+    "priority": "MEDIUM",
+    "position": 2,
+    "projectId": 5,
+    "taskTypeId": 1,
+    "userId": 123,
+    "createdAt": "2026-03-09T09:00:00Z",
+    "updatedAt": "2026-03-09T09:00:00Z"
+  }
+]
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```

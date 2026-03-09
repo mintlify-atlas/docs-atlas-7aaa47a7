@@ -1,0 +1,85 @@
+---
+title: "Update Language Preference"
+api: "PUT /api/user/language"
+description: "Update the user's language preference"
+---
+
+Updates the language preference for the authenticated user. This affects the AI assistant's response language and application localization.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Request Body
+
+<ParamField body="language" type="string" required>
+  The language code. Must be one of: `pt-BR` (Portuguese), `en-US` (English), or `es` (Spanish)
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success with an empty response body.
+
+## Example Request
+
+```bash
+curl -X PUT https://api.example.com/api/user/language \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "language": "en-US"
+  }'
+```
+
+## Example Response
+
+```
+HTTP/1.1 204 No Content
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Invalid language code provided
+</ResponseField>
+
+```json
+{
+  "error": "Validation Failed",
+  "message": "language: must match pattern pt-BR|en-US|es"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The user account was not found
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "User not found"
+}
+```
+
+## Supported Languages
+
+- **pt-BR**: Portuguese (Brazil) - Default language
+- **en-US**: English (United States)
+- **es**: Spanish
+
+## Notes
+
+- The language setting affects the AI assistant's responses and system messages
+- The AI assistant automatically adapts its response format and terminology based on the selected language
+- Language changes take effect immediately for all subsequent API calls

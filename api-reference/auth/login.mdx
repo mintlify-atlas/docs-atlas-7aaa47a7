@@ -1,0 +1,80 @@
+---
+title: "Login"
+api: "POST /auth/login"
+description: "Authenticate a user and obtain access tokens"
+---
+
+Authenticates a user with email and password credentials. Returns JWT access and refresh tokens for subsequent authenticated requests.
+
+## Request Body
+
+<ParamField body="email" type="string" required>
+  User's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password.
+</ParamField>
+
+## Response
+
+<ResponseField name="token" type="string">
+  JWT access token used to authenticate API requests. Include this token in the Authorization header as `Bearer {token}`.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  Refresh token used to obtain a new access token when the current one expires. Use this with the `/auth/refresh` endpoint.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Token type, always returns `Bearer`.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.dailytracker.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidHlwZSI6InJlZnJlc2giLCJpYXQiOjE1MTYyMzkwMjJ9.Kx3w8c9fR5mS4jD7eL2qP1vN8bT6zY0aH3sG9fK1mLp",
+  "type": "Bearer"
+}
+```
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request - Missing Fields
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "email",
+      "message": "must not be blank"
+    }
+  ]
+}
+```
+
+```json 401 Unauthorized - Invalid Credentials
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid email or password"
+}
+```
+</ResponseExample>

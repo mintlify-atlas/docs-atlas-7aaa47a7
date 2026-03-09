@@ -1,0 +1,149 @@
+---
+title: "AI Chat"
+api: "POST /api/ai/chat"
+description: "Send a message to the AI assistant and receive a response"
+---
+
+Interact with the Gemini-powered AI assistant to manage tasks, generate daily scrum summaries, and analyze your work patterns. The assistant can query your tasks, projects, and task types, and even create new tasks through conversation.
+
+## Authentication
+
+Requires Bearer token authentication and a configured Gemini API key.
+
+## Request Body
+
+<ParamField body="history" type="array" required>
+  Array of conversation history objects. Each object contains a `role` field ("user" or "model") and either a `text` field or `parts` field with the message content.
+</ParamField>
+
+## Response
+
+<ResponseField name="reply" type="string" required>
+  The AI assistant's text response to the user's message
+</ResponseField>
+
+<ResponseField name="history" type="array" required>
+  Updated conversation history including the latest exchange and any tool calls made by the AI
+</ResponseField>
+
+<ResponseField name="tasksCreated" type="boolean" required>
+  Indicates whether any tasks were created during this conversation turn
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.example.com/api/ai/chat \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "history": [
+      {
+        "role": "user",
+        "text": "What tasks do I have in progress?"
+      }
+    ]
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "reply": "You have 3 tasks in progress:\n- Implement user authentication (Project: Website Redesign, Type: Feature)\n- Fix login bug (Project: Website Redesign, Type: Bug Fix)\n- Update documentation (Project: Mobile App, Type: Documentation)",
+  "history": [
+    {
+      "role": "user",
+      "text": "What tasks do I have in progress?"
+    },
+    {
+      "role": "model",
+      "text": "You have 3 tasks in progress:\n- Implement user authentication (Project: Website Redesign, Type: Feature)\n- Fix login bug (Project: Website Redesign, Type: Bug Fix)\n- Update documentation (Project: Mobile App, Type: Documentation)",
+      "parts": "[...]"
+    }
+  ],
+  "tasksCreated": false
+}
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Gemini API key is not configured, history is empty, or API rate limit exceeded
+</ResponseField>
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Gemini API key not configured"
+}
+```
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Gemini API rate limit exceeded. Please try again later."
+}
+```
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid Gemini API key"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The user account was not found
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "User not found"
+}
+```
+
+## AI Capabilities
+
+The AI assistant has access to the following tools:
+
+- **get_tasks**: Query tasks with filters for date, status, and project
+- **get_projects**: List all user projects
+- **get_task_types**: List task types, optionally filtered by project
+- **create_task**: Create new tasks after collecting required information
+
+The assistant can:
+- Generate daily scrum summaries
+- Analyze task distribution and productivity
+- Identify bottlenecks and stalled tasks
+- Create tasks through conversational flow
+- Filter and search tasks by various criteria
+
+## Language Support
+
+The assistant responds in the user's configured language:
+- Portuguese (pt-BR)
+- English (en-US)
+- Spanish (es)
+
+The language is automatically determined from the user's account settings.
+
+## Gemini Integration
+
+This endpoint uses Google's Gemini 2.5 Flash model with:
+- Function calling for tool execution (up to 3 tool calls per conversation turn)
+- Multi-turn conversation support with full history
+- Encrypted API key storage (AES-256)
+- Automatic error handling for rate limits and invalid keys

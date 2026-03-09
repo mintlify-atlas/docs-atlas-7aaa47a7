@@ -1,0 +1,145 @@
+---
+title: "Create Task"
+api: "POST /api/tasks"
+description: "Create a new task for the authenticated user"
+---
+
+## Authentication
+
+This endpoint requires authentication. Include a Bearer token in the Authorization header.
+
+## Request Body
+
+<ParamField body="title" type="string" required>
+  Task title (max 200 characters). Cannot be blank.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Task description (max 5000 characters). Optional.
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  Current status of the task. Cannot be blank. Common values: TODO, IN_PROGRESS, DONE
+</ParamField>
+
+<ParamField body="priority" type="string">
+  Priority level of the task. Optional. Common values: LOW, MEDIUM, HIGH. Defaults to MEDIUM.
+</ParamField>
+
+<ParamField body="projectId" type="integer">
+  ID of the project to associate this task with. Optional.
+</ParamField>
+
+<ParamField body="taskTypeId" type="integer">
+  ID of the task type. Optional.
+</ParamField>
+
+## Response
+
+Returns the created task object with a 201 Created status.
+
+<ResponseField name="id" type="integer">
+  Unique identifier for the created task
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Task title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Task description
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the task
+</ResponseField>
+
+<ResponseField name="priority" type="string">
+  Priority level of the task
+</ResponseField>
+
+<ResponseField name="position" type="integer">
+  Position of the task for ordering purposes
+</ResponseField>
+
+<ResponseField name="projectId" type="integer">
+  ID of the associated project (if any)
+</ResponseField>
+
+<ResponseField name="taskTypeId" type="integer">
+  ID of the task type (if any)
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  ID of the user who owns this task
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp when the task was created
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp when the task was last updated
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.dailytracker.com/api/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Implement user authentication",
+    "description": "Add JWT-based authentication to the API",
+    "status": "TODO",
+    "priority": "HIGH",
+    "projectId": 5,
+    "taskTypeId": 2
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 15,
+  "title": "Implement user authentication",
+  "description": "Add JWT-based authentication to the API",
+  "status": "TODO",
+  "priority": "HIGH",
+  "position": 1,
+  "projectId": 5,
+  "taskTypeId": 2,
+  "userId": 123,
+  "createdAt": "2026-03-09T15:30:00Z",
+  "updatedAt": "2026-03-09T15:30:00Z"
+}
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Validation error - missing required fields or invalid data
+</ResponseField>
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "details": [
+    "title: must not be blank",
+    "status: must not be blank"
+  ]
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```

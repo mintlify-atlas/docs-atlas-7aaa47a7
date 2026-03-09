@@ -1,0 +1,92 @@
+---
+title: "Create Task Type"
+api: "POST /api/task-types"
+description: "Create a new task type within a project"
+---
+
+Creates a new task type and associates it with a specific project for the authenticated user.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  The name of the task type (max 100 characters, cannot be blank)
+</ParamField>
+
+<ParamField body="projectId" type="integer" required>
+  The ID of the project to associate this task type with
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer" required>
+  The unique identifier for the newly created task type
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  The name of the task type
+</ResponseField>
+
+<ResponseField name="projectId" type="integer" required>
+  The ID of the project this task type belongs to
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.example.com/api/task-types \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Bug Fix",
+    "projectId": 1
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 5,
+  "name": "Bug Fix",
+  "projectId": 1
+}
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Validation failed for the request body
+</ResponseField>
+
+```json
+{
+  "error": "Validation Failed",
+  "message": "name: must not be blank"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The specified project does not exist or does not belong to the user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "Project not found"
+}
+```

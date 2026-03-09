@@ -1,0 +1,62 @@
+---
+title: "Check API Key Status"
+api: "GET /api/ai/key-status"
+description: "Check if the user has configured a Gemini API key"
+---
+
+Returns whether the authenticated user has a Gemini API key stored in their account. This endpoint does not reveal the actual key value.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Response
+
+<ResponseField name="hasKey" type="boolean" required>
+  Returns `true` if the user has a Gemini API key configured, `false` otherwise
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET https://api.example.com/api/ai/key-status \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## Example Response
+
+```json
+{
+  "hasKey": true
+}
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The user account was not found
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "User not found"
+}
+```
+
+## Notes
+
+- This endpoint is useful for frontend applications to determine whether to show the API key configuration UI
+- The actual API key value is never returned by any endpoint for security reasons
+- Keys are stored encrypted in the database using AES-256 encryption

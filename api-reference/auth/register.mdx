@@ -1,0 +1,110 @@
+---
+title: "Register User"
+api: "POST /auth/register"
+description: "Create a new user account"
+---
+
+Creates a new user account with email and password. Optionally specify the user's preferred language for the application interface.
+
+## Request Body
+
+<ParamField body="email" type="string" required>
+  User's email address. Must be a valid email format and not exceed 254 characters.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password. Must be at least 6 characters long.
+</ParamField>
+
+<ParamField body="language" type="string">
+  Preferred language for the user interface. Allowed values: `pt-BR`, `en-US`, `es`.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message confirming user creation.
+</ResponseField>
+
+<ResponseField name="userId" type="integer">
+  The unique identifier of the newly created user.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.dailytracker.com/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123",
+    "language": "en-US"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "message": "Usuário criado com sucesso!",
+  "userId": 123
+}
+```
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request - Invalid Email
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "email",
+      "message": "must be a well-formed email address"
+    }
+  ]
+}
+```
+
+```json 400 Bad Request - Password Too Short
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "password",
+      "message": "size must be between 6 and 2147483647"
+    }
+  ]
+}
+```
+
+```json 400 Bad Request - Invalid Language
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "language",
+      "message": "must match \"pt-BR|en-US|es\""
+    }
+  ]
+}
+```
+
+```json 409 Conflict - Email Already Exists
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 409,
+  "error": "Conflict",
+  "message": "Email already registered"
+}
+```
+</ResponseExample>

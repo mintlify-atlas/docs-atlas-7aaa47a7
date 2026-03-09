@@ -1,0 +1,163 @@
+---
+title: Environment Variables
+description: Complete reference of environment variables for Daily Tracker API
+icon: sliders
+---
+
+The Daily Tracker API is configured using environment variables. This page provides a complete reference of all available variables.
+
+## Required Variables
+
+These variables must be set for the application to start successfully.
+
+<ParamField path="DATABASE_URL" type="string" required>
+  PostgreSQL connection URL. Supports both JDBC format and Prisma format.
+  
+  **Examples:**
+  - JDBC: `jdbc:postgresql://localhost:5432/daily_scrum`
+  - Prisma: `postgresql://user:pass@localhost:5432/daily_scrum?schema=public`
+  
+  The application will parse either format correctly.
+</ParamField>
+
+<ParamField path="JWT_SECRET" type="string" required>
+  Secret key used to sign JWT access tokens. Must be at least 32 characters long.
+  
+  **Example:** `your_jwt_secret_key_min_32_chars`
+  
+  <Warning>
+    Keep this secret secure. Anyone with access to this key can generate valid authentication tokens.
+  </Warning>
+</ParamField>
+
+<ParamField path="FRONTEND_URL" type="string" required>
+  URL of the frontend application. Used for CORS configuration and OAuth2 redirects.
+  
+  **Examples:**
+  - Development: `http://localhost:5173`
+  - Production: `https://dailytracker.com.br`
+</ParamField>
+
+<ParamField path="GOOGLE_CLIENT_ID" type="string" required>
+  OAuth2 Client ID from Google Cloud Console. Required for Google Sign-In functionality.
+  
+  Get this from the [Google Cloud Console](https://console.cloud.google.com) under "APIs & Services" > "Credentials".
+</ParamField>
+
+<ParamField path="GOOGLE_CLIENT_SECRET" type="string" required>
+  OAuth2 Client Secret from Google Cloud Console. Works together with `GOOGLE_CLIENT_ID`.
+  
+  <Warning>
+    Keep this secret secure. Never commit it to version control.
+  </Warning>
+</ParamField>
+
+<ParamField path="AES_SECRET" type="string" required>
+  Secret key used for AES encryption of sensitive data (like Gemini API keys stored in the database).
+  
+  <Warning>
+    Keep this secret secure and never change it after deployment, as existing encrypted data will become unreadable.
+  </Warning>
+</ParamField>
+
+## Optional Variables
+
+These variables have default values and can be customized as needed.
+
+<ParamField path="PORT" type="integer" default="3000">
+  Port number where the server will listen for HTTP requests.
+  
+  **Example:** `PORT=8080`
+</ParamField>
+
+## Configuration Summary
+
+<CodeGroup>
+```bash Development
+# Local development configuration
+export DATABASE_URL="postgresql://user:pass@localhost:5432/daily_scrum?schema=public"
+export JWT_SECRET="your_jwt_secret_key_with_at_least_32_characters"
+export FRONTEND_URL="http://localhost:5173"
+export GOOGLE_CLIENT_ID="your_google_client_id"
+export GOOGLE_CLIENT_SECRET="your_google_client_secret"
+export AES_SECRET="your_aes_secret_key"
+export PORT=3000
+```
+
+```bash Production
+# Production configuration (Render example)
+DATABASE_URL=postgresql://user:pass@prod-host:5432/daily_scrum
+JWT_SECRET=secure_random_string_at_least_32_chars
+FRONTEND_URL=https://dailytracker.com.br
+GOOGLE_CLIENT_ID=prod_google_client_id
+GOOGLE_CLIENT_SECRET=prod_google_client_secret
+AES_SECRET=secure_random_aes_key
+PORT=3000
+```
+</CodeGroup>
+
+## Application Configuration
+
+Beyond environment variables, the application has additional configuration in `application.yaml`:
+
+### JWT Token Expiration
+
+- **Access Token:** 24 hours (86400000 ms)
+- **Refresh Token:** 30 days (2592000000 ms)
+
+### Database Connection Pool
+
+- **Maximum Pool Size:** 5 connections
+- **Minimum Idle:** 1 connection
+- **Connection Timeout:** 20 seconds
+- **Idle Timeout:** 5 minutes
+
+### Hibernate Configuration
+
+- **DDL Auto:** `validate` (does not create or modify tables)
+- **Dialect:** PostgreSQL
+- **Naming Strategy:** Standard (preserves PascalCase table names)
+
+### Flyway Configuration
+
+- **Baseline on Migrate:** Enabled
+- **Baseline Version:** 0
+- **Migration Location:** `classpath:db/migration`
+
+<Info>
+  The application uses Flyway for database migrations. See the [Database Setup](/guides/database-setup) guide for more details.
+</Info>
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Generate Strong Secrets">
+    Use cryptographically secure random strings for all secret variables:
+    
+    ```bash
+    # Generate a secure random string (32 bytes in base64)
+    openssl rand -base64 32
+    ```
+  </Accordion>
+  
+  <Accordion title="Never Commit Secrets">
+    - Add `.env` files to `.gitignore`
+    - Use environment variable management tools in production
+    - Rotate secrets regularly
+  </Accordion>
+  
+  <Accordion title="Use Different Secrets per Environment">
+    Development, staging, and production should each have their own unique secrets to prevent cross-environment security issues.
+  </Accordion>
+</AccordionGroup>
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Database Setup" icon="database" href="/guides/database-setup">
+    Configure PostgreSQL and run migrations
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/guides/deployment">
+    Deploy with Docker and Render
+  </Card>
+</CardGroup>

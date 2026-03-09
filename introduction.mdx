@@ -1,0 +1,164 @@
+---
+title: Introduction
+description: Welcome to the Daily Tracker API documentation. Learn how to build task management applications with our Spring Boot REST API.
+---
+
+## Overview
+
+Daily Tracker API is a powerful Spring Boot REST API designed for task management and productivity tracking. Built with modern Java technologies, it provides a robust backend for building task tracking applications with features like project organization, task types, and AI-powered assistance.
+
+## What is Daily Tracker?
+
+Daily Tracker is a comprehensive task management system that helps users organize their daily work through:
+
+- **Task Management**: Create, update, reorder, and track tasks with flexible organization
+- **Project Organization**: Group tasks into projects for better workflow management
+- **Custom Task Types**: Define custom task categories to match your workflow
+- **AI Assistant**: Integrated AI chat functionality powered by Google GenAI for productivity insights
+- **Multi-language Support**: Built-in internationalization with support for Portuguese, English, and Spanish
+- **Secure Authentication**: JWT-based authentication with OAuth2 Google login support
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="RESTful API" icon="code">
+    Clean, well-structured REST endpoints following Spring Boot best practices with comprehensive validation
+  </Card>
+  
+  <Card title="JWT Authentication" icon="lock">
+    Secure token-based authentication with refresh tokens and OAuth2 Google integration
+  </Card>
+  
+  <Card title="PostgreSQL Database" icon="database">
+    Reliable data persistence with Spring Data JPA and Flyway migrations
+  </Card>
+  
+  <Card title="AI Integration" icon="brain">
+    Built-in AI assistant powered by Google GenAI SDK for intelligent task recommendations
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+Daily Tracker API is built with enterprise-grade technologies:
+
+- **Java 21**: Latest LTS version with modern language features
+- **Spring Boot 3.5.11**: Latest Spring framework with enhanced performance
+- **Spring Security**: Industry-standard security with JWT and OAuth2
+- **Spring Data JPA**: Hibernate-based ORM for database operations
+- **PostgreSQL**: Production-ready relational database
+- **Maven**: Dependency management and build automation
+- **JJWT 0.12.6**: JSON Web Token implementation
+- **Google GenAI SDK**: AI-powered features integration
+
+## Architecture
+
+The API follows a clean layered architecture:
+
+```
+src/main/java/com/dailytracker/api/
+├── config/         Security, CORS, DataSource configurations
+├── controller/     REST endpoint controllers
+├── dto/            Request/Response data transfer objects
+├── entity/         JPA entities mapped to database tables
+├── exception/      Custom exceptions and global error handling
+├── repository/     Spring Data JPA repositories
+├── security/       JWT services, filters, and OAuth2 handlers
+└── service/        Business logic and service layer
+```
+
+## API Capabilities
+
+The Daily Tracker API provides comprehensive endpoints for:
+
+### Authentication & Authorization
+- User registration with email/password
+- JWT token-based login
+- Token refresh mechanism
+- Google OAuth2 social login
+- Secure session management
+
+### Task Management
+- CRUD operations for tasks
+- Task reordering and prioritization
+- Task filtering by project and type
+- Custom task attributes
+
+### Organization
+- Project creation and management
+- Custom task type definitions
+- User preferences and settings
+- Multi-language interface support
+
+### AI Features
+- Intelligent chat assistant
+- Task analysis and recommendations
+- Secure API key management
+
+## Security First
+
+Security is built into every layer:
+
+<Note>
+  All API endpoints under `/api/*` require JWT authentication. Public endpoints are limited to authentication flows and health checks.
+</Note>
+
+- **Password Hashing**: BCrypt encryption for user passwords
+- **JWT Tokens**: Signed tokens with configurable expiration (24 hours default)
+- **Refresh Tokens**: Long-lived tokens for session renewal (30 days default)
+- **CORS Protection**: Configurable cross-origin resource sharing
+- **Request Validation**: Jakarta Bean Validation on all inputs
+- **SQL Injection Protection**: Parameterized queries via JPA
+
+## Getting Started
+
+Ready to build with Daily Tracker API? Here's your next steps:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get the API running locally in minutes
+  </Card>
+  
+  <Card title="Authentication Guide" icon="key" href="/authentication">
+    Learn how to authenticate and secure your requests
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/auth/register">
+    Explore all available endpoints and schemas
+  </Card>
+  
+  <Card title="Environment Setup" icon="gear" href="/guides/environment-variables">
+    Configure your development environment
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+Daily Tracker API is perfect for:
+
+- **Personal Productivity Apps**: Build custom task managers tailored to your workflow
+- **Team Collaboration Tools**: Create shared task boards for teams
+- **Project Management Systems**: Integrate task tracking into larger project platforms
+- **Time Tracking Solutions**: Combine with time tracking for comprehensive productivity insights
+- **Mobile Applications**: Power iOS and Android apps with a robust backend
+
+## Open Source
+
+Daily Tracker is open source and available on [GitHub](https://github.com/LorenzoPasquali/dailytracker-service). We welcome contributions, bug reports, and feature requests from the community.
+
+<Tip>
+  Check out the [CONTRIBUTING.md](https://github.com/LorenzoPasquali/dailytracker-service/blob/main/CONTRIBUTING.md) guide to learn how you can contribute to the project.
+</Tip>
+
+## Support
+
+Need help? Here's how to get support:
+
+- Browse the API Reference documentation for detailed endpoint information
+- Check the Guides section for common setup and deployment scenarios
+- Open an issue on [GitHub](https://github.com/LorenzoPasquali/dailytracker-service/issues) for bugs or feature requests
+- Review the source code for implementation details
+
+## Next Steps
+
+Continue to the [Quickstart Guide](/quickstart) to get Daily Tracker API running locally, or jump to the [Authentication Guide](/authentication) to learn about securing your API requests.

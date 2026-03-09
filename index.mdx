@@ -1,97 +1,126 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Daily Tracker API Documentation"
+description: "REST API backend for task management built with Spring Boot"
 ---
 
-## Setting up
+<div style={{ 
+  background: 'linear-gradient(135deg, #241c35 0%, #0a7552 100%)', 
+  padding: '60px 40px', 
+  borderRadius: '8px', 
+  marginBottom: '40px',
+  color: '#ffffff'
+}}>
+  <h1 style={{ fontSize: '48px', fontWeight: '800', marginBottom: '16px', color: '#ffffff' }}>
+    Daily Tracker API
+  </h1>
+  <p style={{ fontSize: '20px', opacity: 0.95, marginBottom: '32px', color: '#ffffff' }}>
+    A powerful REST API for managing tasks, projects, and productivity tracking with JWT authentication and AI-powered assistance.
+  </p>
+</div>
 
-Get your documentation site up and running in minutes.
+## Get Started
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Build your task management application with our Spring Boot REST API.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quickstart"
+    icon="rocket"
+    href="/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get up and running in 5 minutes with a working API instance
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Authentication"
+    icon="lock"
+    href="/authentication"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Learn how to authenticate with JWT tokens and OAuth2
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
+    title="API Reference"
     icon="code"
-    href="/essentials/code"
+    href="/api-reference/auth/register"
   >
-    Add sample code to demonstrate how to use your product.
+    Explore all available endpoints and their parameters
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Deployment Guide"
+    icon="server"
+    href="/guides/deployment"
   >
-    Display images and other media.
+    Deploy to production with Docker and Render
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={3}>
+  <Card
+    title="JWT Authentication"
+    icon="shield-halved"
+  >
+    Secure authentication with JWT access tokens and refresh tokens
   </Card>
   <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
+    title="OAuth2 Integration"
+    icon="google"
   >
-    Write once and reuse across your docs.
+    Sign in with Google OAuth2 for seamless user experience
   </Card>
-</Columns>
+  <Card
+    title="Task Management"
+    icon="list-check"
+  >
+    Create, update, and organize tasks with priorities and custom positions
+  </Card>
+  <Card
+    title="Project Organization"
+    icon="folder-tree"
+  >
+    Group tasks into projects with custom colors and task types
+  </Card>
+  <Card
+    title="AI Assistant"
+    icon="brain"
+  >
+    Integrate Google Gemini AI for intelligent task assistance
+  </Card>
+  <Card
+    title="Multi-language"
+    icon="globe"
+  >
+    Built-in support for English, Portuguese, and Spanish
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Tech Stack
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+Built with modern, production-ready technologies:
+
+- **Java 21** - Latest LTS version
+- **Spring Boot 3.5** - Enterprise framework
+- **Spring Security** - JWT + OAuth2 authentication
+- **PostgreSQL** - Reliable data persistence
+- **Flyway** - Database migrations
+- **Docker** - Containerized deployment
+
+## Quick Example
+
+Here's how to create a task with our API:
+
+```bash
+curl -X POST https://api.dailytracker.com/api/tasks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete documentation",
+    "description": "Finish writing API docs",
+    "status": "TODO",
+    "priority": "HIGH"
+  }'
+```
+
+<Note>
+All API endpoints require authentication except for registration, login, and health check endpoints.
+</Note>

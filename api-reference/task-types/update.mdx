@@ -1,0 +1,98 @@
+---
+title: "Update Task Type"
+api: "PUT /api/task-types/{id}"
+description: "Update an existing task type"
+---
+
+Updates the name or project association of an existing task type owned by the authenticated user.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the task type to update
+</ParamField>
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  The new name for the task type (max 100 characters, cannot be blank)
+</ParamField>
+
+<ParamField body="projectId" type="integer" required>
+  The ID of the project to associate this task type with
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer" required>
+  The unique identifier of the task type
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  The updated name of the task type
+</ResponseField>
+
+<ResponseField name="projectId" type="integer" required>
+  The updated project ID
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PUT https://api.example.com/api/task-types/5 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Critical Bug",
+    "projectId": 1
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 5,
+  "name": "Critical Bug",
+  "projectId": 1
+}
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Validation failed for the request body
+</ResponseField>
+
+```json
+{
+  "error": "Validation Failed",
+  "message": "name: must not be blank"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The task type or project does not exist, or does not belong to the user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "Task type not found"
+}
+```

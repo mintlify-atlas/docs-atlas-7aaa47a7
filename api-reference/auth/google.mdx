@@ -1,0 +1,66 @@
+---
+title: "Google OAuth Login"
+api: "GET /auth/google"
+description: "Initiate Google OAuth 2.0 authentication flow"
+---
+
+Initiates the Google OAuth 2.0 authentication flow. This endpoint redirects the user to Google's authentication page where they can sign in with their Google account.
+
+## Description
+
+When accessed, this endpoint redirects to `/oauth2/authorization/google`, which triggers the OAuth 2.0 flow with Google. After successful authentication, the user will be redirected back to your application with authentication credentials.
+
+## Request
+
+No request parameters are required. Simply direct the user to this endpoint or redirect them programmatically.
+
+## Response
+
+This endpoint performs an HTTP 302 redirect to `/oauth2/authorization/google`, which then redirects to Google's OAuth consent screen.
+
+## Example Usage
+
+### Direct Browser Access
+
+Simply navigate to:
+```
+https://api.dailytracker.com/auth/google
+```
+
+### Programmatic Redirect
+
+```javascript
+// JavaScript redirect
+window.location.href = 'https://api.dailytracker.com/auth/google';
+```
+
+```html
+<!-- HTML link -->
+<a href="https://api.dailytracker.com/auth/google">
+  Sign in with Google
+</a>
+```
+
+### cURL Example
+
+```bash
+curl -L https://api.dailytracker.com/auth/google
+```
+
+Note: The `-L` flag tells cURL to follow redirects.
+
+## OAuth Flow
+
+1. User accesses `/auth/google`
+2. Server redirects to `/oauth2/authorization/google`
+3. OAuth2 client redirects to Google's authentication page
+4. User authenticates with Google
+5. Google redirects back to the configured callback URL with an authorization code
+6. Application exchanges the code for access tokens and creates/updates the user session
+
+## Implementation Notes
+
+- This endpoint is typically used in web applications where the user's browser can be redirected
+- For mobile applications, consider using Google's native SDKs instead of web-based OAuth
+- Ensure your OAuth 2.0 client is properly configured with Google Cloud Console
+- Configure appropriate redirect URIs in your Google Cloud Console OAuth settings

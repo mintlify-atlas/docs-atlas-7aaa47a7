@@ -1,0 +1,631 @@
+---
+title: Authentication
+description: Complete guide to authentication and authorization in the Daily Tracker API using JWT tokens and OAuth2 Google login.
+---
+
+## Overview
+
+Daily Tracker API uses **JSON Web Tokens (JWT)** for authentication. The API supports two authentication methods:
+
+1. **Email/Password Authentication**: Traditional registration and login with JWT tokens
+2. **Google OAuth2**: Social login with Google accounts
+
+All endpoints under `/api/*` require authentication, while authentication endpoints (`/auth/*`) and health checks are public.
+
+<Note>
+  The API uses stateless JWT authentication with refresh tokens for session management. Tokens are signed using HMAC-SHA256 algorithm.
+</Note>
+
+## Authentication Flow
+
+Here's the high-level authentication flow:
+
+<Steps>
+  <Step title="Register or Login">
+    User creates an account with `/auth/register` or logs in with `/auth/login` (or uses Google OAuth2).
+  </Step>
+  
+  <Step title="Receive Tokens">
+    API returns an access token (JWT) and a refresh token.
+  </Step>
+  
+  <Step title="Make Authenticated Requests">
+    Include the access token in the `Authorization` header as a Bearer token.
+  </Step>
+  
+  <Step title="Token Expires">
+    When the access token expires (24 hours), use the refresh token to get a new one.
+  </Step>
+</Steps>
+
+## JWT Token Structure
+
+Daily Tracker API uses JJWT library (version 0.12.6) to generate and validate tokens. Let's examine the token structure:
+
+### Token Configuration
+
+From `application.yaml:src/main/resources/application.yaml:52-54`:
+
+```yaml
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 86400000      # 24 hours in milliseconds
+    refresh-expiration: 2592000000  # 30 days in milliseconds
+```
+
+### Access Token Structure
+
+The JWT access token contains the following claims (from `JwtService.java:src/main/java/com/dailytracker/api/security/JwtService.java:30-38`):
+
+```json
+{
+  "sub": "1",              // User ID as subject
+  "userId": 1,              // User ID as custom claim
+  "iat": 1709676800,        // Issued at timestamp
+  "exp": 1709763200         // Expiration timestamp
+}
+```
+
+- **Algorithm**: HMAC-SHA256 (HS256)
+- **Signing Key**: Derived from `JWT_SECRET` environment variable
+- **Expiration**: 24 hours (86400000 ms) from issue time
+- **Claims**: Contains user ID in both `sub` and `userId` fields
+
+<Warning>
+  The `JWT_SECRET` must be at least 32 characters long. Use a cryptographically secure random string for production.
+</Warning>
+
+## Registration
+
+Create a new user account with email and password.
+
+### Endpoint
+
+```
+POST /auth/register
+```
+
+### Request Body
+
+```json
+{
+  "email": "user@example.com",
+  "password": "securepassword123",
+  "language": "en-US"  // optional: pt-BR, en-US, or es
+}
+```
+
+### Validation Rules
+
+From `RegisterRequest.java:src/main/java/com/dailytracker/api/dto/request/RegisterRequest.java`:
+
+- `email`: Required, valid email format, max 254 characters
+- `password`: Required, minimum 6 characters
+- `language`: Optional, must be one of: `pt-BR`, `en-US`, `es`
+
+### Password Security
+
+Passwords are hashed using **BCrypt** before storage. The API uses Spring Security's `BCryptPasswordEncoder` with default strength (10 rounds).
+
+### Example Request
+
+```bash cURL
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "mySecureP@ssw0rd",
+    "language": "en-US"
+  }'
+```
+
+### Response
+
+```json
+{
+  "message": "Usuário criado com sucesso!",
+  "userId": 1
+}
+```
+
+<Tip>
+  After registration, users must login with `/auth/login` to receive authentication tokens. Registration does not automatically log the user in.
+</Tip>
+
+## Login
+
+Authenticate with email and password to receive JWT tokens.
+
+### Endpoint
+
+```
+POST /auth/login
+```
+
+### Request Body
+
+```json
+{
+  "email": "user@example.com",
+  "password": "securepassword123"
+}
+```
+
+### Example Request
+
+```bash cURL
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "mySecureP@ssw0rd"
+  }'
+```
+
+### Response
+
+From `AuthResponse.java:src/main/java/com/dailytracker/api/dto/response/AuthResponse.java`:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcklkIjoxLCJpYXQiOjE3MDk2NzY4MDAsImV4cCI6MTcwOTc2MzIwMH0.signature",
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "Bearer"
+}
+```
+
+- `token`: JWT access token (valid for 24 hours)
+- `refreshToken`: UUID-based refresh token (valid for 30 days)
+- `type`: Always "Bearer" for use in Authorization headers
+
+## Making Authenticated Requests
+
+Once you have an access token, include it in the `Authorization` header with the `Bearer` scheme:
+
+```bash cURL
+curl http://localhost:3000/api/user/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
+```
+
+### Authorization Header Format
+
+```
+Authorization: Bearer <access_token>
+```
+
+<Warning>
+  Never include the refresh token in API requests. Only use the access token (JWT) in the Authorization header.
+</Warning>
+
+### How It Works
+
+From `JwtAuthenticationFilter.java:src/main/java/com/dailytracker/api/security/JwtAuthenticationFilter.java`:
+
+<Steps>
+  <Step title="Extract Token">
+    The JWT filter extracts the token from the `Authorization` header, removing the "Bearer " prefix.
+  </Step>
+  
+  <Step title="Validate Token">
+    The token signature and expiration are validated using the `JWT_SECRET`.
+  </Step>
+  
+  <Step title="Extract User ID">
+    The `userId` claim is extracted from the token payload.
+  </Step>
+  
+  <Step title="Set Authentication">
+    The user ID is set in the Spring Security context as the authentication principal.
+  </Step>
+</Steps>
+
+### Token Validation
+
+From `JwtService.java:src/main/java/com/dailytracker/api/security/JwtService.java:54-61`:
+
+```java
+public boolean isTokenValid(String token) {
+    try {
+        extractUserId(token);
+        return true;
+    } catch (JwtException e) {
+        return false;
+    }
+}
+```
+
+Tokens are validated for:
+- Valid signature (signed with correct secret)
+- Not expired
+- Valid JSON structure
+- Contains required claims
+
+## Token Refresh
+
+When your access token expires (after 24 hours), use the refresh token to obtain a new access token without requiring the user to log in again.
+
+### Endpoint
+
+```
+POST /auth/refresh
+```
+
+### Request Body
+
+```json
+{
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Example Request
+
+```bash cURL
+curl -X POST http://localhost:3000/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "550e8400-e29b-41d4-a716-446655440000"
+  }'
+```
+
+### Response
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "type": "Bearer"
+}
+```
+
+You receive:
+- A new access token with a fresh 24-hour expiration
+- A new refresh token with a fresh 30-day expiration
+
+<Note>
+  Refresh tokens are stored in the database and are single-use. When you use a refresh token, it's invalidated and a new one is issued.
+</Note>
+
+### Refresh Token Lifecycle
+
+1. **Creation**: Generated as a UUID when user logs in
+2. **Storage**: Stored in the database with user association and expiration
+3. **Validation**: Checked for existence, ownership, and expiration
+4. **Rotation**: Invalidated and replaced when used
+5. **Expiration**: Automatically expires after 30 days
+
+## Google OAuth2 Login
+
+Daily Tracker supports social login with Google accounts using OAuth2.
+
+### Configuration
+
+From `application.yaml:src/main/resources/application.yaml:30-43`:
+
+```yaml
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: profile, email
+            redirect-uri: "{baseUrl}/auth/google/callback"
+```
+
+### OAuth2 Flow
+
+<Steps>
+  <Step title="Initiate OAuth Flow">
+    Frontend redirects user to `/auth/google` endpoint.
+  </Step>
+  
+  <Step title="Google Authorization">
+    User is redirected to Google's authorization page to grant permissions.
+  </Step>
+  
+  <Step title="Callback Handler">
+    Google redirects back to `/auth/google/callback` with authorization code.
+  </Step>
+  
+  <Step title="User Creation/Linking">
+    From `OAuth2SuccessHandler.java:src/main/java/com/dailytracker/api/security/OAuth2SuccessHandler.java:41-55`:
+    
+    - If user exists with Google ID → use existing account
+    - If user exists with same email → link Google ID to account
+    - If new user → create new account with Google ID
+  </Step>
+  
+  <Step title="Token Generation">
+    JWT access token and refresh token are generated for the user.
+  </Step>
+  
+  <Step title="Frontend Communication">
+    Tokens are sent to frontend via popup `postMessage` or URL redirect.
+  </Step>
+</Steps>
+
+### Initiating Google Login
+
+**Frontend Implementation:**
+
+```javascript
+// Open Google login in popup
+const popup = window.open(
+  'http://localhost:3000/auth/google',
+  'Google Login',
+  'width=500,height=600'
+);
+
+// Listen for tokens
+window.addEventListener('message', (event) => {
+  if (event.origin === 'http://localhost:3000') {
+    const { token, refreshToken } = event.data;
+    // Store tokens and authenticate user
+    localStorage.setItem('token', token);
+    localStorage.setItem('refreshToken', refreshToken);
+  }
+});
+```
+
+### OAuth2 Token Delivery
+
+From `OAuth2SuccessHandler.java:src/main/java/com/dailytracker/api/security/OAuth2SuccessHandler.java:63-71`:
+
+The OAuth2 success handler returns an HTML page that:
+
+1. **Popup Flow**: Uses `window.opener.postMessage()` to send tokens to the parent window
+2. **Fallback**: Redirects to frontend with tokens in URL query parameters
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+if (window.opener) {
+  window.opener.postMessage(
+    { token: 'JWT_TOKEN', refreshToken: 'REFRESH_TOKEN' },
+    'http://localhost:5173'
+  );
+  window.close();
+} else {
+  window.location.href = 'http://localhost:5173/login/success?token=JWT_TOKEN&refreshToken=REFRESH_TOKEN';
+}
+</script>
+</body>
+</html>
+```
+
+<Warning>
+  For security, the `postMessage` origin is restricted to your `FRONTEND_URL` environment variable. Make sure this is configured correctly.
+</Warning>
+
+### Google Account Linking
+
+If a user previously registered with email/password and then logs in with Google using the same email:
+
+- The Google ID is automatically linked to the existing account
+- User maintains access to all their existing data
+- User can subsequently login with either method
+
+## Security Configuration
+
+From `SecurityConfig.java:src/main/java/com/dailytracker/api/config/SecurityConfig.java:33-44`:
+
+### Public Endpoints (No Authentication Required)
+
+```
+/auth/register
+/auth/login
+/auth/refresh
+/auth/google
+/auth/google/callback
+/oauth2/**
+/healthz
+```
+
+### Protected Endpoints (Authentication Required)
+
+```
+/api/**
+```
+
+All endpoints under `/api/` require a valid JWT token in the Authorization header.
+
+### Session Management
+
+From `SecurityConfig.java:src/main/java/com/dailytracker/api/config/SecurityConfig.java:30-32`:
+
+```java
+.sessionManagement(sm -> sm
+    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+)
+```
+
+- JWT authentication is stateless (no server-side sessions)
+- Sessions are only created for OAuth2 flows (IF_REQUIRED)
+- CSRF protection is disabled (stateless API)
+
+## Best Practices
+
+### Token Storage
+
+<CardGroup cols={2}>
+  <Card title="Browser Applications" icon="browser">
+    Store tokens in `localStorage` or `sessionStorage`. Use `httpOnly` cookies for enhanced security if possible.
+  </Card>
+  
+  <Card title="Mobile Applications" icon="mobile">
+    Use secure storage mechanisms like iOS Keychain or Android Keystore.
+  </Card>
+  
+  <Card title="Server-to-Server" icon="server">
+    Store refresh tokens in secure, encrypted storage. Keep access tokens in memory only.
+  </Card>
+  
+  <Card title="Single Page Apps" icon="code">
+    Implement token refresh logic before expiration to maintain seamless UX.
+  </Card>
+</CardGroup>
+
+### Token Refresh Strategy
+
+Implement proactive token refresh:
+
+```javascript
+// Check token expiration before each request
+function getAccessToken() {
+  const token = localStorage.getItem('token');
+  const decoded = jwt_decode(token);
+  const expirationTime = decoded.exp * 1000;
+  const currentTime = Date.now();
+  
+  // Refresh if token expires in less than 5 minutes
+  if (expirationTime - currentTime < 5 * 60 * 1000) {
+    return refreshAccessToken();
+  }
+  
+  return token;
+}
+```
+
+### Error Handling
+
+Handle authentication errors gracefully:
+
+| Status Code | Error | Action |
+|-------------|-------|--------|
+| `401` | Invalid or expired token | Refresh token or redirect to login |
+| `403` | Valid token but insufficient permissions | Show error message |
+| `404` | User not found | Token valid but user deleted - logout |
+
+### Security Recommendations
+
+<Warning>
+  **Production Security Checklist:**
+  
+  - Use HTTPS in production (required for secure token transmission)
+  - Set strong `JWT_SECRET` (minimum 32 characters, cryptographically random)
+  - Configure proper CORS restrictions in production
+  - Implement rate limiting on authentication endpoints
+  - Enable Google OAuth2 for production domains in Google Cloud Console
+  - Use environment variables, never hardcode secrets
+  - Implement token revocation for logout functionality
+  - Monitor for suspicious authentication patterns
+</Warning>
+
+## Example: Complete Authentication Flow
+
+Here's a complete example implementing the full authentication lifecycle:
+
+```javascript Example Client Implementation
+class AuthService {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
+
+  async register(email, password, language = 'en-US') {
+    const response = await fetch(`${this.baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, language })
+    });
+    return response.json();
+  }
+
+  async login(email, password) {
+    const response = await fetch(`${this.baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    
+    // Store tokens
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    
+    return data;
+  }
+
+  async refreshToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    });
+    const data = await response.json();
+    
+    // Update stored tokens
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    
+    return data;
+  }
+
+  async authenticatedRequest(url, options = {}) {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    // Handle token expiration
+    if (response.status === 401) {
+      await this.refreshToken();
+      // Retry request with new token
+      return this.authenticatedRequest(url, options);
+    }
+
+    return response;
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+  }
+}
+
+// Usage
+const auth = new AuthService('http://localhost:3000');
+
+// Register and login
+await auth.register('user@example.com', 'password123');
+await auth.login('user@example.com', 'password123');
+
+// Make authenticated request
+const response = await auth.authenticatedRequest(
+  'http://localhost:3000/api/user/me'
+);
+const user = await response.json();
+```
+
+## Next Steps
+
+Now that you understand authentication, explore the API:
+
+<CardGroup cols={2}>
+  <Card title="User API" icon="user" href="/api-reference/user/me">
+    Manage user profiles and preferences
+  </Card>
+  
+  <Card title="Tasks API" icon="list-check" href="/api-reference/tasks/list">
+    Create and manage tasks with full CRUD operations
+  </Card>
+  
+  <Card title="Projects API" icon="folder" href="/api-reference/projects/list">
+    Organize tasks into projects
+  </Card>
+  
+  <Card title="AI Assistant" icon="robot" href="/api-reference/ai/chat">
+    Integrate AI-powered task assistance
+  </Card>
+</CardGroup>

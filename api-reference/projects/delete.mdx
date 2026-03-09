@@ -1,0 +1,62 @@
+---
+title: "Delete Project"
+api: "DELETE /api/projects/{id}"
+description: "Delete a project"
+---
+
+Deletes a project and all associated data (tasks and task types). The project must belong to the authenticated user.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the project to delete
+</ParamField>
+
+## Response
+
+Returns HTTP 204 No Content on successful deletion with an empty response body.
+
+## Example Request
+
+```bash
+curl -X DELETE https://api.example.com/api/projects/1 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## Example Response
+
+```
+HTTP/1.1 204 No Content
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  Project not found or does not belong to the authenticated user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "Project not found"
+}
+```
+
+<ResponseField name="warning" type="warning">
+  This action is irreversible. Deleting a project will also delete all associated tasks and task types due to cascade deletion.
+</ResponseField>

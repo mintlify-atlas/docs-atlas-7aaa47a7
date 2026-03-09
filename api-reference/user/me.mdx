@@ -1,0 +1,72 @@
+---
+title: "Get Current User"
+api: "GET /api/user/me"
+description: "Retrieve the authenticated user's profile information"
+---
+
+Returns the profile information for the currently authenticated user.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Response
+
+<ResponseField name="id" type="integer" required>
+  The unique identifier of the user
+</ResponseField>
+
+<ResponseField name="email" type="string" required>
+  The user's email address
+</ResponseField>
+
+<ResponseField name="language" type="string" required>
+  The user's preferred language (pt-BR, en-US, or es). Defaults to pt-BR if not set.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET https://api.example.com/api/user/me \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## Example Response
+
+```json
+{
+  "id": 123,
+  "email": "user@example.com",
+  "language": "pt-BR"
+}
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The user account was not found
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "User not found"
+}
+```
+
+## Notes
+
+- This endpoint is useful for retrieving the current user's information after authentication
+- The password field is never included in the response for security reasons
+- The Gemini API key status is not included in this response (use `/api/ai/key-status` instead)

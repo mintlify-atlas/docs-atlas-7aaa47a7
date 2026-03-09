@@ -1,0 +1,80 @@
+---
+title: "Save Gemini API Key"
+api: "PUT /api/ai/key"
+description: "Store or update the user's Gemini API key"
+---
+
+Stores or updates the Gemini API key for the authenticated user. The key is encrypted using AES-256 before being stored in the database.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Request Body
+
+<ParamField body="key" type="string" required>
+  The Gemini API key to store. Cannot be blank.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success with an empty response body.
+
+## Example Request
+
+```bash
+curl -X PUT https://api.example.com/api/ai/key \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "AIzaSyD..."
+  }'
+```
+
+## Example Response
+
+```
+HTTP/1.1 204 No Content
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  The API key is missing or blank
+</ResponseField>
+
+```json
+{
+  "error": "Bad Request",
+  "message": "API key cannot be empty"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  The user account was not found
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "User not found"
+}
+```
+
+## Security
+
+- API keys are encrypted using AES-256 encryption via the `EncryptionService` before storage
+- Keys are never exposed in API responses
+- The encryption key is managed securely by the application
+- If you need to obtain a Gemini API key, visit [Google AI Studio](https://aistudio.google.com/apikey)

@@ -1,0 +1,103 @@
+---
+title: "Update Project"
+api: "PUT /api/projects/{id}"
+description: "Update an existing project"
+---
+
+Updates the details of an existing project. The project must belong to the authenticated user.
+
+## Authentication
+
+Requires Bearer token authentication.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the project to update
+</ParamField>
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  The updated name of the project (max 100 characters, cannot be blank)
+</ParamField>
+
+<ParamField body="color" type="string">
+  The updated color code for the project in hex format (max 7 characters, e.g., #3b82f6)
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer" required>
+  The unique identifier for the project
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  The updated name of the project
+</ResponseField>
+
+<ResponseField name="color" type="string" required>
+  The updated color code for the project
+</ResponseField>
+
+<ResponseField name="userId" type="integer" required>
+  The ID of the user who owns the project
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X PUT https://api.example.com/api/projects/1 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Website Redesign v2",
+    "color": "#ef4444"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "id": 1,
+  "name": "Website Redesign v2",
+  "color": "#ef4444",
+  "userId": 123
+}
+```
+
+## Error Responses
+
+<ResponseField name="400 Bad Request">
+  Validation failed for the request body
+</ResponseField>
+
+```json
+{
+  "error": "Validation Failed",
+  "message": "name: must not be blank"
+}
+```
+
+<ResponseField name="401 Unauthorized">
+  Authentication token is missing or invalid
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  Project not found or does not belong to the authenticated user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "Project not found"
+}
+```

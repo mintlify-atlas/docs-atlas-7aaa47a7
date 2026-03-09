@@ -1,80 +1,390 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get the Daily Tracker API running locally in minutes with this step-by-step guide.
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, ensure you have the following installed on your system:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Java 21" icon="mug-hot">
+    Latest LTS version of Java. Download from [Oracle](https://www.oracle.com/java/technologies/downloads/) or use [SDKMAN](https://sdkman.io/)
+  </Card>
+  
+  <Card title="PostgreSQL" icon="database">
+    Version 12 or higher. Download from [postgresql.org](https://www.postgresql.org/download/)
+  </Card>
+  
+  <Card title="Maven" icon="box">
+    Included with the project via Maven Wrapper (mvnw)
+  </Card>
+  
+  <Card title="Git" icon="code-branch">
+    For cloning the repository
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  The project includes Maven Wrapper (`mvnw`), so you don't need to install Maven separately. The wrapper script will download the correct Maven version automatically.
 </Note>
+
+## Step 1: Clone the Repository
+
+Start by cloning the Daily Tracker API repository:
+
+<CodeGroup>
+```bash SSH
+git clone git@github.com:LorenzoPasquali/dailytracker-service.git
+cd dailytracker-service
+```
+
+```bash HTTPS
+git clone https://github.com/LorenzoPasquali/dailytracker-service.git
+cd dailytracker-service
+```
+</CodeGroup>
+
+## Step 2: Set Up PostgreSQL Database
+
+Create a new PostgreSQL database for Daily Tracker:
+
+```sql PostgreSQL
+CREATE DATABASE daily_tracker;
+```
+
+<Tip>
+  If you're using a different database name, make sure to update the `DATABASE_URL` environment variable accordingly in the next step.
+</Tip>
+
+The application uses Flyway for database migrations, which will automatically create all necessary tables when the application starts.
+
+## Step 3: Configure Environment Variables
+
+Daily Tracker API requires several environment variables. Create them in your shell or use a `.env` file:
+
+### Required Variables
+
+```bash .env
+# Database connection (PostgreSQL)
+DATABASE_URL="postgresql://username:password@localhost:5432/daily_tracker?schema=public"
+
+# JWT secret key (minimum 32 characters)
+JWT_SECRET="your_secure_jwt_secret_key_at_least_32_characters_long"
+
+# Frontend URL for CORS and OAuth redirects
+FRONTEND_URL="http://localhost:5173"
+
+# Google OAuth2 credentials (optional, for social login)
+GOOGLE_CLIENT_ID="your_google_client_id"
+GOOGLE_CLIENT_SECRET="your_google_client_secret"
+
+# AES encryption secret for sensitive data
+AES_SECRET="your_aes_encryption_secret_key_32_chars"
+```
+
+### Optional Variables
+
+```bash Optional
+# Server port (default: 3000)
+PORT=3000
+```
+
+<Warning>
+  **Security Best Practice**: Never commit your `.env` file or secrets to version control. The `.gitignore` file already excludes common secret files.
+</Warning>
+
+### Environment Variable Details
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|--------|
+| `DATABASE_URL` | PostgreSQL connection string. Supports both Prisma format and standard JDBC URLs | Yes | - |
+| `JWT_SECRET` | Secret key for signing JWT tokens. Must be at least 32 characters | Yes | - |
+| `FRONTEND_URL` | URL of your frontend application for CORS and OAuth redirects | Yes | `http://localhost:5173` |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID from Google Cloud Console | No* | - |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret from Google Cloud Console | No* | - |
+| `AES_SECRET` | AES encryption key for storing sensitive API keys (32 characters) | Yes | - |
+| `PORT` | Port number for the API server | No | `3000` |
+
+<Note>
+  *Google OAuth credentials are only required if you want to enable Google social login. The API will work without them using email/password authentication.
+</Note>
+
+## Step 4: Generate JWT Secret
+
+You need a strong, random secret key for JWT tokens. Generate one using:
+
+<CodeGroup>
+```bash OpenSSL
+openssl rand -base64 48
+```
+
+```bash Node.js
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+```
+
+```bash Python
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+</CodeGroup>
+
+Copy the output and use it as your `JWT_SECRET` environment variable.
+
+## Step 5: Set Up Google OAuth2 (Optional)
+
+If you want to enable Google login, follow these steps:
+
+<Steps>
+  <Step title="Create Google Cloud Project">
+    Go to [Google Cloud Console](https://console.cloud.google.com/) and create a new project or select an existing one.
+  </Step>
+  
+  <Step title="Enable Google+ API">
+    In the API Library, search for "Google+ API" and enable it for your project.
+  </Step>
+  
+  <Step title="Create OAuth2 Credentials">
+    Navigate to **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
+    
+    - Application type: **Web application**
+    - Authorized redirect URIs: `http://localhost:3000/auth/google/callback`
+  </Step>
+  
+  <Step title="Copy Credentials">
+    Copy the **Client ID** and **Client Secret** to your environment variables.
+  </Step>
+</Steps>
+
+<Tip>
+  For production deployments, add your production domain to the authorized redirect URIs (e.g., `https://yourdomain.com/auth/google/callback`).
+</Tip>
+
+## Step 6: Run the Application
+
+Now you're ready to start the API server. Use the Maven wrapper to run the application:
+
+<CodeGroup>
+```bash Unix/Linux/macOS
+export DATABASE_URL="postgresql://username:password@localhost:5432/daily_tracker"
+export JWT_SECRET="your_generated_secret_key_here"
+export FRONTEND_URL="http://localhost:5173"
+export AES_SECRET="your_aes_secret_key_32_characters"
+
+./mvnw spring-boot:run
+```
+
+```bash Windows (CMD)
+set DATABASE_URL=postgresql://username:password@localhost:5432/daily_tracker
+set JWT_SECRET=your_generated_secret_key_here
+set FRONTEND_URL=http://localhost:5173
+set AES_SECRET=your_aes_secret_key_32_characters
+
+mvnw.cmd spring-boot:run
+```
+
+```bash Windows (PowerShell)
+$env:DATABASE_URL="postgresql://username:password@localhost:5432/daily_tracker"
+$env:JWT_SECRET="your_generated_secret_key_here"
+$env:FRONTEND_URL="http://localhost:5173"
+$env:AES_SECRET="your_aes_secret_key_32_characters"
+
+.\mvnw.cmd spring-boot:run
+```
+</CodeGroup>
+
+The application will:
+
+1. Download dependencies (first run only)
+2. Run Flyway migrations to set up the database schema
+3. Start the Spring Boot application
+4. Listen on port `3000` (or your configured `PORT`)
+
+<Note>
+  The first run may take a few minutes as Maven downloads all dependencies. Subsequent runs will be much faster.
+</Note>
+
+You should see output similar to:
+
+```
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::               (v3.5.11)
+
+INFO: Started DailytrackerServiceApplication in 3.456 seconds
+```
+
+## Step 7: Verify Installation
+
+Check that the API is running by calling the health check endpoint:
+
+```bash cURL
+curl http://localhost:3000/healthz
+```
+
+You should receive:
+
+```
+OK
+```
+
+## Step 8: Make Your First API Request
+
+Now let's register a user and make an authenticated request.
+
+### Register a New User
+
+```bash cURL
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123",
+    "language": "en-US"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "message": "Usuário criado com sucesso!",
+  "userId": 1
+}
+```
+
+### Login to Get JWT Token
+
+```bash cURL
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securepassword123"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "Bearer"
+}
+```
+
+<Tip>
+  Save the `token` value - you'll need it for authenticated requests. The token is valid for 24 hours by default.
+</Tip>
+
+### Get User Profile (Authenticated)
+
+Use the token from the login response to make an authenticated request:
+
+```bash cURL
+curl http://localhost:3000/api/user/me \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+Replace `YOUR_TOKEN_HERE` with the actual token from the login response.
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "language": "en-US"
+}
+```
+
+### Create Your First Task
+
+```bash cURL
+curl -X POST http://localhost:3000/api/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "My first task",
+    "description": "Getting started with Daily Tracker API",
+    "completed": false
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "title": "My first task",
+  "description": "Getting started with Daily Tracker API",
+  "completed": false,
+  "createdAt": "2026-03-09T23:15:00Z",
+  "updatedAt": "2026-03-09T23:15:00Z",
+  "order": 0,
+  "userId": 1
+}
+```
+
+## What's Next?
+
+Congratulations! You now have Daily Tracker API running locally. Here's what to explore next:
+
+<CardGroup cols={2}>
+  <Card title="Authentication Guide" icon="shield" href="/authentication">
+    Deep dive into JWT authentication, token refresh, and OAuth2 flows
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/auth/register">
+    Explore all available endpoints with detailed schemas and examples
+  </Card>
+  
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Complete guide to all configuration options
+  </Card>
+  
+  <Card title="Deployment Guide" icon="rocket" href="/guides/deployment">
+    Learn how to deploy to production environments
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Database Connection Errors
+
+If you see errors about database connections:
+
+- Verify PostgreSQL is running: `pg_isready`
+- Check your `DATABASE_URL` format and credentials
+- Ensure the database exists: `psql -l`
+- Check PostgreSQL logs for connection issues
+
+### JWT Secret Too Short
+
+If you see "JWT secret must be at least 32 characters":
+
+- Generate a new secret using the commands in Step 4
+- Ensure your `JWT_SECRET` environment variable is set correctly
+
+### Port Already in Use
+
+If port 3000 is already in use:
+
+- Set a different port: `export PORT=8080`
+- Or stop the process using port 3000
+
+### Maven Dependencies Not Downloading
+
+If Maven can't download dependencies:
+
+- Check your internet connection
+- Try clearing Maven cache: `rm -rf ~/.m2/repository`
+- Run with verbose output: `./mvnw spring-boot:run -X`
+
+<Warning>
+  If you encounter issues not covered here, check the [GitHub Issues](https://github.com/LorenzoPasquali/dailytracker-service/issues) page or create a new issue with details about your problem.
+</Warning>

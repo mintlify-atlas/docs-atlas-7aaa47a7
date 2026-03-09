@@ -1,0 +1,56 @@
+---
+title: "Delete Task"
+api: "DELETE /api/tasks/:id"
+description: "Delete a task for the authenticated user"
+---
+
+## Authentication
+
+This endpoint requires authentication. Include a Bearer token in the Authorization header.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the task to delete
+</ParamField>
+
+## Response
+
+Returns 204 No Content on successful deletion.
+
+## Example Request
+
+```bash
+curl -X DELETE https://api.dailytracker.com/api/tasks/15 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## Example Response
+
+```
+204 No Content
+```
+
+## Error Responses
+
+<ResponseField name="401 Unauthorized">
+  Missing or invalid authentication token
+</ResponseField>
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing authentication token"
+}
+```
+
+<ResponseField name="404 Not Found">
+  Task not found or does not belong to the authenticated user
+</ResponseField>
+
+```json
+{
+  "error": "Not Found",
+  "message": "Task not found"
+}
+```

@@ -1,0 +1,75 @@
+---
+title: "Refresh Token"
+api: "POST /auth/refresh"
+description: "Obtain a new access token using a refresh token"
+---
+
+Exchanges a valid refresh token for a new access token and refresh token pair. Use this endpoint when your access token has expired to maintain an authenticated session without requiring the user to log in again.
+
+## Request Body
+
+<ParamField body="refreshToken" type="string" required>
+  The refresh token obtained from the login or previous refresh response.
+</ParamField>
+
+## Response
+
+<ResponseField name="token" type="string">
+  New JWT access token used to authenticate API requests. Include this token in the Authorization header as `Bearer {token}`.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  New refresh token for future token refresh requests. The previous refresh token is invalidated.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Token type, always returns `Bearer`.
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.dailytracker.com/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidHlwZSI6InJlZnJlc2giLCJpYXQiOjE1MTYyMzkwMjJ9.Kx3w8c9fR5mS4jD7eL2qP1vN8bT6zY0aH3sG9fK1mLp"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidHlwZSI6InJlZnJlc2giLCJpYXQiOjE1MTYyNDAwMDB9.mNp8sK2wH7jR6eY4tL9vQ3xB1zC5aD0fG8hJ2kM4nOp",
+  "type": "Bearer"
+}
+```
+
+## Error Responses
+
+<ResponseExample>
+```json 400 Bad Request - Missing Token
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "refreshToken",
+      "message": "must not be blank"
+    }
+  ]
+}
+```
+
+```json 401 Unauthorized - Invalid or Expired Token
+{
+  "timestamp": "2026-03-09T10:30:00.000+00:00",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid or expired refresh token"
+}
+```
+</ResponseExample>
