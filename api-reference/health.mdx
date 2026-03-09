@@ -1,0 +1,93 @@
+---
+title: "Health Check"
+api: "GET /healthz"
+description: "Check if the API is running and healthy"
+---
+
+Returns a simple health status for the Daily Tracker API service. This endpoint is publicly accessible and does not require authentication.
+
+## Response
+
+<ResponseField name="status" type="string">
+  Returns "OK" when the service is healthy
+</ResponseField>
+
+## Example Request
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.dailytracker.com/healthz
+```
+
+```javascript JavaScript
+fetch('https://api.dailytracker.com/healthz')
+  .then(response => response.text())
+  .then(data => console.log(data));
+```
+
+```java Java
+HttpClient client = HttpClient.newHttpClient();
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.dailytracker.com/healthz"))
+    .GET()
+    .build();
+
+HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+System.out.println(response.body()); // OK
+```
+
+</CodeGroup>
+
+## Example Response
+
+```text
+OK
+```
+
+<Info>
+This endpoint is commonly used for:
+- Container health checks in Docker and Kubernetes
+- Load balancer health monitoring
+- CI/CD pipeline verification
+- Uptime monitoring services
+</Info>
+
+## Use Cases
+
+### Docker Health Check
+
+Add this to your `Dockerfile`:
+
+```dockerfile Dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/healthz || exit 1
+```
+
+### Kubernetes Liveness Probe
+
+Configure in your deployment manifest:
+
+```yaml kubernetes.yaml
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+```
+
+### Render Configuration
+
+Render automatically uses `/healthz` as the default health check path. See the [Deployment Guide](/guides/deployment) for more details.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Deployment Guide" icon="rocket" href="/guides/deployment">
+    Configure health checks in production
+  </Card>
+  <Card title="Environment Variables" icon="gear" href="/guides/environment-variables">
+    Configure server port and other settings
+  </Card>
+</CardGroup>

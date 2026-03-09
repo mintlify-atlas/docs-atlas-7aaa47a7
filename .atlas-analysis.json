@@ -119,6 +119,7 @@
     "GET /api/ai/key-status",
     "PUT /api/ai/key",
     "DELETE /api/ai/key",
-    "POST /api/ai/chat"
+    "POST /api/ai/chat",
+    "GET /healthz"
   ]
 }
