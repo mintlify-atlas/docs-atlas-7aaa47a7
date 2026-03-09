@@ -1,0 +1,124 @@
+{
+  "projectType": "api-service",
+  "projectName": "Daily Tracker API",
+  "projectDescription": "REST API backend for Daily Tracker task management application built with Spring Boot",
+  "theme": "palm",
+  "primaryColor": "#241c35",
+  "lightColor": "#0a7552",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/environment-variables",
+              "guides/deployment",
+              "guides/database-setup"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api-reference/auth/register",
+              "api-reference/auth/login",
+              "api-reference/auth/refresh",
+              "api-reference/auth/google"
+            ]
+          },
+          {
+            "group": "Tasks",
+            "pages": [
+              "api-reference/tasks/list",
+              "api-reference/tasks/create",
+              "api-reference/tasks/update",
+              "api-reference/tasks/reorder",
+              "api-reference/tasks/delete"
+            ]
+          },
+          {
+            "group": "Projects",
+            "pages": [
+              "api-reference/projects/list",
+              "api-reference/projects/create",
+              "api-reference/projects/update",
+              "api-reference/projects/delete"
+            ]
+          },
+          {
+            "group": "Task Types",
+            "pages": [
+              "api-reference/task-types/create",
+              "api-reference/task-types/update",
+              "api-reference/task-types/delete"
+            ]
+          },
+          {
+            "group": "AI Assistant",
+            "pages": [
+              "api-reference/ai/key-status",
+              "api-reference/ai/save-key",
+              "api-reference/ai/delete-key",
+              "api-reference/ai/chat"
+            ]
+          },
+          {
+            "group": "User",
+            "pages": [
+              "api-reference/user/me",
+              "api-reference/user/update-language"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "JWT authentication with refresh tokens",
+    "Google OAuth2 integration",
+    "Task management with priorities and positions",
+    "Project organization with custom colors",
+    "AI chat assistant using Google Gemini",
+    "Multi-language support (en, pt-BR, es)",
+    "Encrypted API key storage"
+  ],
+  "publicApiSurface": [
+    "POST /auth/register",
+    "POST /auth/login",
+    "POST /auth/refresh",
+    "GET /auth/google",
+    "GET /api/user/me",
+    "PUT /api/user/language",
+    "GET /api/tasks",
+    "POST /api/tasks",
+    "PUT /api/tasks/:id",
+    "PUT /api/tasks/reorder",
+    "DELETE /api/tasks/:id",
+    "GET /api/projects",
+    "POST /api/projects",
+    "PUT /api/projects/:id",
+    "DELETE /api/projects/:id",
+    "POST /api/task-types",
+    "PUT /api/task-types/:id",
+    "DELETE /api/task-types/:id",
+    "GET /api/ai/key-status",
+    "PUT /api/ai/key",
+    "DELETE /api/ai/key",
+    "POST /api/ai/chat"
+  ]
+}
